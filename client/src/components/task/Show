@@ -1,0 +1,88 @@
+import React from 'react'
+import axios from '../../config/axios'
+import {Link} from "react-router-dom"
+
+
+class Show extends React.Component{
+    constructor(props){
+        super(props)
+        this.state={
+            task: {}
+        }
+    }
+
+
+    handleArchive=()=>{
+        axios.put(`/tasks/${this.props.match.params.id}`, {"isArchived": !this.state.task.isArchived}, {
+            headers:{
+                "x-auth": localStorage.getItem("authToken")
+            }
+        })
+            .then(response=>{
+                console.log("taskArc:",response.data)
+                this.setState({task: response.data})
+            })
+            .catch(err=>{
+                alert(err)
+            })
+    }
+
+
+    handleDelete=()=>{
+        axios.delete(`/tasks/${this.props.match.params.id}`, {
+            headers:{
+                "x-auth": localStorage.getItem("authToken")
+            }
+        })
+            .then(response=>{
+                console.log("taskDel:",response.data)
+                this.props.history.push("/tasks")
+            })
+            .catch(err=>{
+                alert(err)
+            })
+    }
+
+
+    handleBack=()=>{
+        this.props.history.push("/tasks")
+    }
+
+    
+    componentDidMount(){
+        axios.get(`/tasks/${this.props.match.params.id}`,{
+            headers:{
+                "x-auth": localStorage.getItem("authToken")
+            }
+        })
+            .then(response=>{
+                console.log("task:",response.data)
+                this.setState({task: response.data})
+            })
+            .catch(err=>{
+                alert(err)
+            })
+    }
+
+    render(){
+        const {_id,title,dueDate,createdAt,isArchived,labels} = this.state.task
+        return(
+            <div>
+                <button onClick={this.handleBack}>Back</button>
+                <button onClick={this.handleArchive} disabled={isArchived}>{isArchived ? "Archived" : "Archive"}</button>
+                <button onClick={this.handleDelete}>Delete</button>
+                <button onClick={this.handleEdit}><Link to={{pathname:`/tasks/1/${_id}`}}>Edit</Link></button>
+
+
+                <div>
+                    <h1>Title: {title}</h1> 
+                    {labels && labels.map(label=> <span key={label._id}>*{label.name}</span>)}
+                    <p>Date Created: {createdAt}</p>
+                    <p>Due Date: {dueDate}</p>
+                </div>
+            </div>
+        )
+    }
+}
+
+export default Show

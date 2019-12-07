@@ -128,7 +128,7 @@ class Form extends React.Component{
                                 </div>
                                 
                                 <div className="col-md-12 mt-4">
-                                    <input className="btn btn-primary btn-lg btn-block" type='submit' value='Create Task' disabled={isSubmitting}/>
+                                    <input className="btn btn-primary btn-sm" type='submit' value='Create Task' disabled={isSubmitting}/>
                                 </div>
 
                             </div>

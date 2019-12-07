@@ -1,6 +1,6 @@
 import React from 'react'
 import MetisMenu from 'react-metismenu'
-import RouterLink from 'react-metismenu-router-link';
+// import RouterLink from 'react-metismenu-router-link';
 import './sidebar.css'
 
 class SideBar extends React.Component{

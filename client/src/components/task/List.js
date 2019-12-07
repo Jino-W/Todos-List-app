@@ -1,17 +1,16 @@
 import React from 'react'
 import axios from '../../config/axios'
-// import {Link} from "react-router-dom"
 import Edit from './Edit'
 import Create from './Create'
 import "../../bootstrap.css"
-// import "./modal.css"
 import Modal from 'react-modal';
 import moment from 'moment'
-import swal from 'sweetalert';
 import LabelInfo from './labelShow'
-import SideBar from './SideBar'
-// import Popup from "reactjs-popup"
-// import SweetAlert from 'react-bootstrap-sweetalert';
+import MetisMenu from 'react-metismenu'
+import '../../metisMenu.css'
+import '../../App.css'
+import {content, CustomLink} from "./customLink"
+import swal from 'sweetalert'
 
 
 class List extends React.Component{
@@ -19,6 +18,7 @@ class List extends React.Component{
         super()
         this.state={
             tasks:[],
+            visibleTasks: [],
             editTask: "",
             isEdit : false,
             modalIsOpen: false,
@@ -28,14 +28,17 @@ class List extends React.Component{
 
     //updating edited task in UI
     submitHandle = (editedTask) =>{
-        console.log("edit", editedTask)
         this.setState(prevState=>{
             const task = prevState.tasks.find(item => item._id===editedTask._id)
-            
+            const currentTask = prevState.visibleTasks.find(item => item._id === editedTask._id)
             if(task){
                 Object.assign(task, editedTask)
+                Object.assign(currentTask,editedTask)
             }else{
                 prevState.tasks.push(editedTask)
+                if(!this.state.visibleTasks.every(task => task.isArchived)){
+                    prevState.visibleTasks.push(editedTask)
+                }
             }
             return {tasks:prevState.tasks,editTask:'',isEdit:false, modalIsOpen: false}
         })
@@ -58,6 +61,7 @@ class List extends React.Component{
         })
     }
 
+
     //Enable edit form
     handleEdit=(task)=>{
         this.setState({isEdit: true, editTask: task})
@@ -72,9 +76,10 @@ class List extends React.Component{
     handleDelete=(id)=>{
         swal({
             title: "Are you sure?",
-            text: "Are you sure that you want to leave this page?",
+            text: "Are you sure that you want delete this TASK?",
             icon: "warning",
             dangerMode: true,
+            showCancelButton: true
         })
             .then(willDelete => {
                 if (willDelete) {
@@ -85,9 +90,9 @@ class List extends React.Component{
                     })
                         .then(response=>{
                             console.log("taskDel:",response.data)
-                            swal("Deleted!", "Your imaginary file has been deleted!", "success");
+                            swal("Deleted!", "Task is deleted successfully!!", "success");
                             this.setState(prevState=>{
-                                return {tasks: prevState.tasks.filter(t=>t._id !== id)}
+                                return {visibleTasks: prevState.tasks.filter(t=>t._id !== id), tasks: prevState.tasks.filter(t=>t._id !== id)}
                             })
                         })
                         .catch(err=>{
@@ -98,25 +103,49 @@ class List extends React.Component{
     }
 
     //Archive task
-    handleArchive=(task)=>{
-        axios.put(`/tasks/${task._id}`, {"isArchived": !task.isArchived}, {
-            headers:{
-                "x-auth": localStorage.getItem("authToken")
-            }
+    handleArchive = (id) =>{
+        let visibleTasks
+        if(this.state.visibleTasks.every(task => !task.isArchived)){
+            visibleTasks = this.state.visibleTasks.filter(task => task._id !==id)
+        }
+        const postData={"isArchived":true}
+        axios.put(`/tasks/${id}`,postData,{headers:{
+            'x-auth':localStorage.getItem('authToken')
+        }})
+        .then(()=>{
+            this.setState(prevState=>{
+                const task = prevState.tasks.find(task=> task._id === id)
+                task.isArchived = true
+                return {tasks:prevState.tasks, visibleTasks}
+            })
         })
-            .then(response=>{
-                console.log("taskArc:",response.data)
-                this.setState(prevState=>{
-                    const item = prevState.tasks.find(t=>{
-                        return t._id === task._id
-                    })
-                    item.isArchived = !item.isArchived
-                    return {tasks: prevState.tasks, alert: false}
-                })
-            })
-            .catch(err=>{
-                alert(err)
-            })
+        .catch(err=>{
+            swal(err, {icon: "error"});
+        })
+    }
+
+    //MenuSelect
+    handleMenuSelect = (label) =>{
+        switch(label.onSelected){
+            case 'Archived':
+                this.setState({visibleTasks:this.state.tasks.filter(task=>task.isArchived)})
+                break
+            case 'Non Archived':
+                this.setState({visibleTasks:this.state.tasks.filter(task=>!task.isArchived)})
+                break
+            case 'Completed':
+                this.setState({visibleTasks:this.state.tasks.filter(task=>task.isCompleted)})
+                break
+            case 'In Progress':
+                this.setState({visibleTasks:this.state.tasks.filter(task=>!task.isCompleted && moment(task.dueDate,'YYYY-MM-DD')> moment(new Date(),'DD/MM/YYYY'))})
+                break
+            case 'Pending':
+                this.setState({visibleTasks:this.state.tasks.filter(task=>!task.isCompleted && moment(task.dueDate,'YYYY-MM-DD')< moment(new Date(),'DD/MM/YYYY'))})
+                break
+            default:
+                this.setState({visibleTasks:this.state.tasks})
+                break
+        }
     }
 
 
@@ -138,10 +167,10 @@ class List extends React.Component{
             }
         })
             .then(response=>{
-                this.setState({tasks: response.data})
+                this.setState({tasks: response.data,visibleTasks:[...response.data]})
             })
             .catch(err=>{
-                alert(err)
+                swal(err, {icon: "error"});
             })
     }
 
@@ -160,10 +189,13 @@ class List extends React.Component{
           };
         return(
             <div className="row mt-3">
-                <div className="col-md-3">
+                {/* <div className="col-md-3">
                     <SideBar />
+                </div> */}
+                <div className='side-bar col-md-3'>
+                    <MetisMenu content={content} onSelected={this.handleMenuSelect} LinkComponent={CustomLink}/>
                 </div>
-                <div className="col-md-9">
+                <div className="col-md-8">
                     <div className="row mt-3">
                         <div className="col-md-12">
                             <h2 className="float-left" >Listing Tasks</h2>
@@ -187,7 +219,7 @@ class List extends React.Component{
 
 
                     {/* Listing Task */}
-                    {this.state.tasks && <ul className ="list-group mt-4">{this.state.tasks.map(task=>{
+                    {this.state.visibleTasks && <ul className ="list-group mt-4">{this.state.visibleTasks.map(task=>{
                         const {_id, createdAt , title, dueDate, isArchived, labels} = task
 
                         return (
@@ -219,7 +251,7 @@ class List extends React.Component{
                                     
                                         <div className="col-md-2 mt-2">
                                             {/* Archive button */}
-                                            <a href={task.isArchived ? null:'# '} className={isArchived && "disable-links"}><i className="fas fa-archive mr-3"  onClick={()=>!task.isArchived?this.handleArchive(task): null}></i></a>
+                                            <a href={task.isArchived ? null:'# '} className={isArchived && "disable-links"}><i className="fas fa-archive mr-3"  onClick={()=>!task.isArchived?this.handleArchive(task._id): null}></i></a>
                                             
                                             {/* Delete button */}
                                             <a href='# '><i className="fas fa-trash-alt mr-3" onClick={()=>this.handleDelete(_id)}></i></a>

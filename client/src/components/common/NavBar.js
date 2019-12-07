@@ -1,8 +1,6 @@
 import React from 'react'
-// import Home from './Home'
 import {NavLink} from "react-router-dom"
 import "./navbar.css"
-import UserProfile from '../task/userProfile'
 
 
 class NavBar extends React.Component{

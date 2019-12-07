@@ -27,6 +27,10 @@ const taskSchema = new Schema({
         required: true,
         ref: 'Label'
     }],
+    isCompleted:{
+        type:Boolean,
+    default:false
+    },
     user:{
         type: Schema.Types.ObjectId,
         required: true,

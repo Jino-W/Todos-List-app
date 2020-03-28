@@ -5,7 +5,7 @@ import NavBar from './components/common/NavBar'
 import List from './components/task/List'
 import EventCalender from './components/task/EventCalender'
 import Create from './components/task/Create'
-import UserProfile from './components/task/userProfile'
+// import UserProfile from './components/task/userProfile'
 
 
 
